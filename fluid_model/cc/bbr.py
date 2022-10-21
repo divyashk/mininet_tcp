@@ -98,8 +98,8 @@ def bbr_update(cfg, env, state, i, t, lookback):
         bdp = state[xbtl][i][-1] * RTprop
         # Max-adjust inflight_hi to current inflight, but decrease it in case of loss when probing for bandwidth
         dwhi = (1-mcrs_val) * idc(t_net - RTprop) * smoothsig(state[v][i][-1] - state[whi][i][-1]) * 2**(t_net/RTprop) \
-             - (1-mcrs_val) * idc(state[pc][lookback[p]]-0.02) * -math.log(0.9)/env[D][i] * state[whi][i][-1]
-        state[whi][i].append( max(state[whi][i][-1] + step*dwhi, bdp)) #1.02*bdp) )
+             - (1-mcrs_val) * idc(state[pc][lookback[p]]-0.02) * 0.3/env[D][i] * state[whi][i][-1]
+        state[whi][i].append( max(state[whi][i][-1] + step*dwhi, 1.15 * bdp)) #1.02*bdp) )
         # In probing phase, reset inflight_lo to base window; else, adjust downwards upon loss
         dwlo = (1-state[mcrs][i][-1]) * (state[whi][i][-1] - state[wlo][i][-1])/step \
              - mcrs_val * idc(state[pc][lookback[p]]-0.02) * -math.log(0.9)/env[D][i] * state[wlo][i][-1]

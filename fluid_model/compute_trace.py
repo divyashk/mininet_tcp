@@ -72,7 +72,7 @@ def step_with_delay(cfg, env, state):
         p_new = (1 - env[C]/y_at_link) if (state[q][-1] == env[B] and y_at_link > env[C]) else 0
         p_new = max(0, min(p_new, 1))
         state[p].append( p_new )
-        # --- Continuous (needed for BBR)
+        # --- Continuous
         p_new = (1 - env[C]/y_at_link) * (state[q][-1]/env[B])**loss_abruptness if y_at_link > env[C] else 0
         p_new = max(0, min(p_new, 1))
         state[pc].append( p_new )
