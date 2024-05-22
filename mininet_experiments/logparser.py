@@ -93,7 +93,7 @@ def loss_calc(received, sent, key):
 
     if received.shape[0] == 0 or sent.shape[0] == 0:
         return received, sent
-    data = sent.append(received)
+    data = pd.concat([sent, received])
     data.sort_values(by=[key, 'timestamp'], inplace=True)
     #print("Concatenated and sorted: ")
     #print(data)
@@ -191,7 +191,7 @@ def processTCPDdata(filename, econfig, timestep=0.1):
 
         sent_by_sender = df[(df.measuredon == str(sender)) & (df.src == sender) & (df.dest == receiver_no)].copy()
         filler_df.loc[0, 'timestamp'] = sent_by_sender['timestamp'].iloc[0]
-        sent_by_sender = sent_by_sender.append(filler_df)
+        sent_by_sender = pd.concat([sent_by_sender, filler_df])
         sent_by_sender.loc[:, 'loss'] = 0
         sent_by_sender.loc[:, 'num'] = 0
         sent_by_sender.loc[:, 'latency_sum'] = 0.0  # In the beginning, it is the packet latency. Only later it is summed up.
@@ -519,10 +519,11 @@ def main(savePlot=False):
     if econfig['plot_memory']:
         stats.update(plotMemory(figurename, axes[ax_indx], memdata, startAbsTs, endAbsTs, econfig))
         ax_indx += 1
-
+    print(stats)
     print("Opening permissions...")
     os.system("sudo chmod -R 777 " +  RESULT_FILE_PREFIX)
     print("Parsing and plotting finished.")
+    plt.savefig('plot.png')
     plt.close('all')
 
 

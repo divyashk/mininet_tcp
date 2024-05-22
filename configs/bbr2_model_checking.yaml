@@ -2,7 +2,7 @@ name: bbr2_model_checking
 
 # --------------------------------------------------
 common_parameters:
-  send_duration: 32 #s
+  send_duration: 100 #s
   truncate_front: 2.0 #s
   truncate_back: 1.0 #s
   plot_load_resolution: 0.01
@@ -16,7 +16,7 @@ varying_parameters:
     - ['BBR2']
   link_latency: [10] # In ms
   source_latency_range: 
-    - [5.0, 10.0]
+    - [2.5, 5.0]
   qdisc:
     #- RED
     - Drop-tail
@@ -32,12 +32,26 @@ model_parameters:
 
 # --------------------------------------------------
 experiment_parameters:
-  pox_directory: [/home/simon/prog/pox/, /home/simonsch/pox/]
+  pox_directory: [/home/mininet/pox]
   base_config: mininet_experiments/base_config.yaml
   runs: 1
 
 # --------------------------------------------------
-plots: []
+plots: 
+  B_queueing_cc_combination_droptail:
+    model_results: True
+    experiment_results: True
+    legend: False
+    x: switch_buffer
+    y: avg_queue
+    z: cc_combination
+    other:
+      senders: 1
+      qdisc: Drop-tail
+      source_latency_range: [2.5, 5.0]
+    dropped_keys:
+      x: [0.5]
+  
 
 trace_plots:
 
