@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File with Sudo",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/mininet/imc22-bbr-fluid-model/run_with_sudo.py",
+            "args": ["/home/mininet/imc22-bbr-fluid-model/run_experiments.py", "configs/bbr2_model_checking.yaml"],
+            "console": "integratedTerminal",
+            "cwd": "/home/mininet/imc22-bbr-fluid-model"
+        }
+    ]
+}
