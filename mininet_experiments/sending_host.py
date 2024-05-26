@@ -2,7 +2,7 @@
 
 # Takes 3 arguments:
 # hostID: provide an integer X, assuming the sending hostnames are 'hX'
-# destHostID: provide the desthostID
+# desthostID: provide the desthostID
 # configloc: the location of the configfile (default file won't work. some by cc-experiment inferred values are needed)
 
 import os
@@ -37,12 +37,12 @@ def startTcpDump(hostID):
             subprocess.Popen(tcpDumpCommmand, stdout=f, stderr=f)
             log(hostID, "Started tcpdump.")
 
-def setupInterface(hostID, IPNum):
-    ip = IPRoute()
-    index = ip.link_lookup(ifname=''+hostID+'-eth1')[0]
-    ip.addr('add', index, address='10.0.1.'+IPNum, mask=24)
-    ip.close()
-    log(hostID, "Second interface set up.")
+# def setupInterface(hostID, IPNum):
+#     ip = IPRoute()
+#     index = ip.link_lookup(ifname=''+hostID+'-eth1')[0]
+#     ip.addr('add', index, address='10.0.1.'+IPNum, mask=24)
+#     ip.close()
+#     log(hostID, "Second interface set up.")
 
 def setTSO(hostID, on_mode):
     mode = "on" if on_mode else "off"
@@ -83,6 +83,7 @@ def udp_stable_command(cbr_as_pps, cbr_rate):
 
 def run(behavior_index, desthostID, config):
     print(config['sending_behavior'][behavior_index].keys())
+    # what is this?
     hostID, behavior = [(i, j) for i, j in config['sending_behavior'][behavior_index].items()][0]
     IPNum = behavior_index + 1
     initiateLog(hostID)

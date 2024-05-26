@@ -9,23 +9,23 @@ import os
 
 RESULT_FILE_PREFIX = ''
 
-def initiateLog():
-    if os.path.exists(RESULT_FILE_PREFIX+"hostlogs/hDest.log"):
+def initiateLog(desthostID):
+    if os.path.exists(RESULT_FILE_PREFIX+f"hostlogs/h{desthostID}.log"):
         return
-    with open(RESULT_FILE_PREFIX+"hostlogs/hDest.log", "w+") as logfile:
-        logfile.write(("%.6f" % time.time())+": hDest: Started\n")
+    with open(RESULT_FILE_PREFIX+f"hostlogs/h{desthostID}.log", "w+") as logfile:
+        logfile.write(("%.6f" % time.time())+": h{desthostID}: Started\n")
 
 
 def log(logContent):
-    with open(RESULT_FILE_PREFIX+"hostlogs/hDest.log", "a+") as logfile:
-        logfile.write(("%.6f" % time.time())+": hDest: "+logContent+"\n")
+    with open(RESULT_FILE_PREFIX+f"hostlogs/h{desthostID}.log", "a+") as logfile:
+        logfile.write(("%.6f" % time.time())+f": h{desthostID}: "+logContent+"\n")
 
 
-def startTcpDump():
-    # > '+RESULT_FILE_PREFIX+'hostdata/hDest-eth'+str(i)+'.log
+def startTcpDump(desthostID):
+    # > '+RESULT_FILE_PREFIX+f'hostdata/h{desthostID}-eth'+str(i)+'.log
     for i in range(1):
-        with open(RESULT_FILE_PREFIX+'hostdata/hDest-eth'+str(i)+'.log', 'w+') as f:
-            tcpDumpCommmand = ('tcpdump -tt -i hDest-eth'+str(i)+' -e -v -n -S -x -s 96').split()
+        with open(RESULT_FILE_PREFIX+f'hostdata/h{desthostID}-eth'+str(i)+'.log', 'w+') as f:
+            tcpDumpCommmand = (f'tcpdump -tt -i h{desthostID}-eth'+str(i)+' -e -v -n -S -x -s 96').split()
             subprocess.Popen(tcpDumpCommmand, stdout=f, stderr=f)
             log("Started tcpdump.")
 
@@ -56,20 +56,23 @@ def startUdpServer(config):
     return proc, fout
 
 
-# Setup second interface (only needed in multipath cases)
-def setupInterface(hostID):
-    ip = IPRoute()
-    index = ip.link_lookup(ifname='hDest-eth1')[0]
-    ip.addr('add', index, address='10.0.1.'+hostID, mask=24)
-    ip.close()
+# # Setup second interface (only needed in multipath cases)
+# def setupInterface(hostID):
+#     ip = IPRoute()
+#     index = ip.link_lookup(ifname=f'h{desthostID}-eth1')[0]
+#     ip.addr('add', index, address='10.0.1.'+hostID, mask=24)
+#     ip.close()
 
-def main(config, desthostID):
+def main(config, desthostID, nSrc):
     global RESULT_FILE_PREFIX
     RESULT_FILE_PREFIX = config['result_dir']
-    initiateLog()
+    initiateLog(desthostID)
 
     # Announce yourself
-    pingCommand = ("ping -c 3 -I %s-eth%d 10.0.%d.%d" % ("hDest", 0, 0, 1)).split()
+    # h{desthostID}-eth0
+    srcID = desthostID
+    # here it is advertising it's own ip. ips are the opposite of node numbers 
+    pingCommand = ("ping -c 3 -I %s-eth%d 10.0.%d.%d" % ("h"+desthostID, 0, 0, desthostID)).split()
     subprocess.call(pingCommand)
 
     use_tcp = False
@@ -82,7 +85,7 @@ def main(config, desthostID):
             use_udp = True
 
     log("Use TCP: " + str(use_tcp) + " | Use UDP: " + str(use_udp))
-    startTcpDump()
+    startTcpDump(desthostID)
     if use_tcp:
         tcp_proc, tcp_f = startTcpServer(config)
     if use_udp:
@@ -97,15 +100,16 @@ def main(config, desthostID):
         udp_f.close()
         log("Finished UDP Server.")
 
-
+ 
 def parseargs():
     desthostID = int(sys.argv[1])
     configfile_location = sys.argv[2]
-    return desthostID, configfile_location
+    nSrc = int(sys.argv[3])
+    return desthostID, configfile_location, nSrc
 
 if __name__ == "__main__":
-    desthostID, configloc = parseargs()
+    desthostID, configloc, nSrc = parseargs()
     f = open(configloc, "r")
     config = yaml.safe_load(f)
     f.close()
-    main(config, desthostID)
+    main(config, desthostID, nSrc)

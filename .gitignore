@@ -1,4 +1,3 @@
-results/*
-*.png
-*.json
-
+results
+__pycache__
+configs

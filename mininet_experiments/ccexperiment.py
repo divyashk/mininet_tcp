@@ -27,7 +27,7 @@ from datetime import datetime
 import yaml
 from collections import Counter
 import argparse
-
+###TODO: Need to check if the ips are alloted correctly.
 logfolder = 'hostlogs/'
 datafolder = 'hostdata/'
 condenseddatafolder = 'condensed/'
@@ -137,18 +137,19 @@ def mininet_with_tcpdump(config):
     if config['disable_ipv6']:
         disable_ipv6(net)
     net.start()
-
-    hDest = net.hosts[-1]
-    destHostID = len(net.hosts)
-    nSrcHosts = destHostID-1
-
+    #nSrcHosts = 10
+    nSrcHosts = int(len(net.hosts)/2)
+    
     resultFilePrefix = config['result_dir']
-
-    # Start destination host
-    print("Starting host hDest")
-    hDest.cmd('mininet_experiments/receiving_host.py '+str(destHostID)+' '+ config['result_dir'] + 'config.yaml > ' +
-              resultFilePrefix +  logfolder + 'host'+ str(destHostID) + '.log 2>&1 &')
-
+    #destID : 11 -> 20]
+    for desthostID in range(nSrcHosts+1, 2*nSrcHosts+1):
+        # Start all destination host
+        print(f"Starting host h{desthostID}")
+        tmp_host = net.hosts[desthostID-1]
+        tmp_host.cmd('mininet_experiments/receiving_host.py '+str(desthostID)+' '+ config['result_dir'] + 'config.yaml > ' +
+                resultFilePrefix +  logfolder + 'host'+ str(desthostID) + '.log'+' '+str(nSrcHosts)+'  2>&1 &')
+    
+    # dev_name= s1-eth11 (interface connected to s2 on s1)
     dev_name = "s1-eth" + str(nSrcHosts + 1) # TODO: Rather give explicit name for NIC
 
     queue_meas_thread = QueueMeasurements(resultFilePrefix + "queue_length.csv", dev_name, config['tc_queue_sample_period'])
@@ -171,10 +172,13 @@ def mininet_with_tcpdump(config):
     # Start sending on source hosts
     print("Invoking hosts...")
     for i in range(nSrcHosts):
-        print("Host #%d started." % (i))
-        net.hosts[i].cmdPrint('mininet_experiments/sending_host.py '+str(i)+' '+str(destHostID)+' ' + config['result_dir']  +
+        
+        # Rememeber the var desthostID: 11 -> 20
+        destID = nSrcHosts + i + 1
+        net.hosts[i].cmdPrint('mininet_experiments/sending_host.py '+str(i)+' '+str(destID)+' ' + config['result_dir']  +
                               'config.yaml  > ' + resultFilePrefix + logfolder + 'host'+ str(i+1) + '.log 2>&1 &')
-
+        print("Host #%d started." % (i+1))
+        
     num_samples = float(config['send_duration'])/float(config['memory_sampling_period'])
     for i in range(int(num_samples)):
         os.system("echo -n '" + str(time.time()) + ",' >> " + resultFilePrefix + "sysmemusage.csv")
@@ -191,10 +195,12 @@ def mininet_with_tcpdump(config):
     # Stop measuring
     queue_meas_thread.safe_stop()
     queue_meas_thread.join()
-
+    
     ## Safe-quit tcpdump
-    hDest.cmd('pkill -SIGTERM -f tcpdump')
-    hDest.cmd('pkill -9 -f "iperf -s"')
+    for desthostID in range(nSrcHosts+1 , nSrcHosts*2+1):
+        tmp_host = net.hosts[desthostID - 1]
+        tmp_host.cmd('pkill -SIGTERM -f tcpdump')
+        tmp_host.cmd('pkill -9 -f "iperf -s"')
 
     #CLI(net)
 
