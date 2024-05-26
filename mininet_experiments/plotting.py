@@ -72,7 +72,7 @@ COLORS = {
 
 PLOT_CWND_KEYS = ['10.0.0.1']
 
-def plotLoad(figurename, ax, tcpd_data, starttime, endtime, econfig, destination=None):
+def plotLoad(figurename, ax, tcpd_data, starttime, endtime, econfig, destination="throughput.png"):
     plt.figure(figurename)
     if destination is not None:
         plot, ax = plt.subplots()
@@ -108,7 +108,7 @@ def plotLoad(figurename, ax, tcpd_data, starttime, endtime, econfig, destination
             sender_throughputs.append(average)
             if hostid in econfig['plot_hosts']:
                 ax.plot(tcpd_data.index.values, converter * tcpd_data[label].values / timestep , ":", label=("h%s Throughput" % (hostid)))
-
+    
     ax.plot(tcpd_data.index.values, converter * tcpd_data['total_load'].values / timestep , ':', label="Total Throughput")
     ax.set_title(r'\textbf{Flows:} ' + str(sendBehav) + r', \textbf{Capacity} ' + str(linkCap) + r'Mbps' + r', \textbf{Buffering}: ' + str(buffer_factor) + " * BDP")
     ax.hlines([total_throughput], starttime, endtime, linestyles='-.', label='Average Throughput', colors='blue')
@@ -118,7 +118,7 @@ def plotLoad(figurename, ax, tcpd_data, starttime, endtime, econfig, destination
     # ax.set_xticks(xticks)
     ax.set_ylim(bottom=0.0)
     ax.legend(loc=1)
-
+    plot.savefig("sending_rate.png")    
     # Also make distribution plot
     avg_flow = np.average(sender_throughputs)
     plotDistribution(sender_throughputs, econfig['result_dir'] + 'throughput_dist.png',
@@ -206,7 +206,7 @@ def plotCwnd(figurename, ax, cwndData, ssthreshData, startTimestamp, endTimestam
             ts = [t for t in ts if float(t) >= startTimestamp and float(t) <= endTimestamp]
             displayTs = [float(t)-startTimestamp for t in ts]
             ax.plot(displayTs, [ssthreshData[origin][t] for t in ts], ':', label=("h%s (ssthresh)" % hostID), color=COLORS["h"+hostID][0])
-
+    
     with open(RESULT_FILE_PREFIX+'cwndData.json', 'w+') as pDF:
         json.dump(plotCwndData, pDF, sort_keys=True, indent=4)
 
@@ -222,7 +222,7 @@ def plotCwnd(figurename, ax, cwndData, ssthreshData, startTimestamp, endTimestam
 
 # Plot Queue data
 # Collect and print
-def plotQueue(figurename, ax, ts, values, startTimestamp, endTimestamp, bwd_product, real_buffer_size, xticks, econfig, destination=None):
+def plotQueue(figurename, ax, ts, values, startTimestamp, endTimestamp, bwd_product, real_buffer_size, xticks, econfig, destination="graph_1.png"):
     plt.figure(figurename)
     if destination is not None:
         plot, ax = plt.subplots()
@@ -246,6 +246,7 @@ def plotQueue(figurename, ax, ts, values, startTimestamp, endTimestamp, bwd_prod
     ax.set_ylabel(r'Queue Length (packets)')
     ax.set_ylim(bottom=0.0)
     ax.legend()
+    plot.savefig("queue.png")  
     if destination is not None:
         plt.savefig(destination, dpi=300)
         plt.close(figurename)

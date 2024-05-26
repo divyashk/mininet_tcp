@@ -164,4 +164,4 @@ inferred:
     num_senders:
 
 
-delete_raw_dump: True  # Deletes the raw data after logparser condensed it
+delete_raw_dump: False  # Deletes the raw data after logparser condensed it

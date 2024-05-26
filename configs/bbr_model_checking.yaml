@@ -32,12 +32,25 @@ model_parameters:
 
 # --------------------------------------------------
 experiment_parameters:
-  pox_directory: [/home/simon/prog/pox/, /home/simonsch/pox/]
+  pox_directory: [/home/mininet/pox]
   base_config: mininet_experiments/base_config.yaml
   runs: 1
 
 # --------------------------------------------------
-plots: []
+plots:
+  B_queueing_cc_combination_droptail:
+    model_results: True
+    experiment_results: True
+    legend: False
+    x: switch_buffer
+    y: avg_queue
+    z: cc_combination
+    other:
+      senders: 1
+      qdisc: Drop-tail
+      source_latency_range: [5.0, 10.0]
+    dropped_keys:
+      x: [0.5]
 
 trace_plots:
 
