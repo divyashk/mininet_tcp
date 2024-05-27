@@ -17,7 +17,7 @@ RED_CORRECTION_FACTOR = { # Need to correct for the distortions that the Linux R
 class BottleneckTopology( Topo ):
     # Buffer size expressed in packets, patency in ms, capacity in Mbps
     # BW Delay product also in packets
-    def __init__( self, srcHosts=3, linkCapacity=200, linkLatency=3, bufferFactor=1, bw_delay_product=100, random_latency_range=None, use_htb=True, use_red=False):
+    def __init__( self, srcHosts=3, linkCapacity=100, linkLatency=3, bufferFactor=1, bw_delay_product=100, random_latency_range=None, use_htb=True, use_red=False, accessCapacity=120):
         "Create custom topo."
 
         # Initialize topology
@@ -46,7 +46,7 @@ class BottleneckTopology( Topo ):
             else:
                 random_latency = int(random.uniform(random_latency_range[0], random_latency_range[1]) * 10) / 10
                 e2e_latencies.append(2*random_latency + 2*linkLatency)
-                self.addLink(s1, h, delay=str(random_latency) + "ms")
+                self.addLink(s1, h, bw=accessCapacity, delay=str(random_latency) + "ms")
         
         # Add links between destination hosts and switch s2
         for h in dst_hosts:
@@ -55,7 +55,7 @@ class BottleneckTopology( Topo ):
             else:
                 random_latency = int(random.uniform(random_latency_range[0], random_latency_range[1]) * 10) / 10
                 e2e_latencies[-1] += 2*random_latency
-                self.addLink(s2, h, delay=str(random_latency) + "ms")
+                self.addLink(s2, h, bw=accessCapacity, delay=str(random_latency) + "ms")
 
         print(e2e_latencies)
         

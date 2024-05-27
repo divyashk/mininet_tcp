@@ -72,7 +72,7 @@ COLORS = {
 
 PLOT_CWND_KEYS = ['10.0.0.1']
 
-def plotLoad(figurename, ax, tcpd_data, starttime, endtime, econfig, destination="throughput.png"):
+def plotLoad(figurename, ax, tcpd_data, starttime, endtime, econfig, destination=None):
     plt.figure(figurename)
     if destination is not None:
         plot, ax = plt.subplots()
@@ -118,7 +118,7 @@ def plotLoad(figurename, ax, tcpd_data, starttime, endtime, econfig, destination
     # ax.set_xticks(xticks)
     ax.set_ylim(bottom=0.0)
     ax.legend(loc=1)
-    plot.savefig("sending_rate.png")    
+    plt.savefig("sending_rate.png")    
     # Also make distribution plot
     avg_flow = np.average(sender_throughputs)
     plotDistribution(sender_throughputs, econfig['result_dir'] + 'throughput_dist.png',

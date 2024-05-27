@@ -72,7 +72,7 @@ def main(config, desthostID, nSrc):
     # h{desthostID}-eth0
     srcID = desthostID
     # here it is advertising it's own ip. ips are the opposite of node numbers 
-    pingCommand = ("ping -c 3 -I %s-eth%d 10.0.%d.%d" % ("h"+desthostID, 0, 0, desthostID)).split()
+    pingCommand = ("ping -c 3 -I %s-eth%d 10.0.%d.%d" % ("h"+str(desthostID), 0, 0,(desthostID))).split()
     subprocess.call(pingCommand)
 
     use_tcp = False

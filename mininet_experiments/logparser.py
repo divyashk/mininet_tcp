@@ -88,7 +88,7 @@ def inflight_calc(data, econfig):
 # Losses are registered at timestamp where lost packet was sent.
 # Latency is registered at the sender timestamp.
 
-def loss_calc(received, sent, key):
+def loss_calc(received, sent, key, receiver):
     more_output = False
 
     if received.shape[0] == 0 or sent.shape[0] == 0:
@@ -100,28 +100,28 @@ def loss_calc(received, sent, key):
 
     # Only for Seqno: Find duplicate keys in sender, mark not-last ones as losses
     if key == 'seqno':
-        data.loc[(data.measuredon != 'Dest') & ((data[(data.measuredon != 'Dest')]).duplicated(subset=key, keep='last')), 'loss'] = 1
+        data.loc[(data.measuredon != str(receiver)) & ((data[(data.measuredon != str(receiver))]).duplicated(subset=key, keep='last')), 'loss'] = 1
 
         # Technically, there should not be duplicates on the receiver side, but for some reason this happens. Is it when the resending is due to timeout?
         # We will keep track of it as well.
-        data.loc[(data.measuredon == 'Dest') & (data[(data.measuredon == 'Dest')].duplicated(subset=key, keep='last')), 'double_receive'] = 1
-        data.loc[(data.measuredon == 'Dest') & (data[(data.measuredon == 'Dest')].duplicated(subset=key, keep='last')), 'loss'] = 1 # Only for avoidng
+        data.loc[(data.measuredon == str(receiver)) & (data[(data.measuredon == str(receiver))].duplicated(subset=key, keep='last')), 'double_receive'] = 1
+        data.loc[(data.measuredon == str(receiver)) & (data[(data.measuredon == str(receiver))].duplicated(subset=key, keep='last')), 'loss'] = 1 # Only for avoidng
 
     # Safety Check: No duplicate keys left among sender or receiver
     #if ~data.duplicated(subset='udpno', keep=False):
-    dest_has_dupl = data[(data.loss == 0) & (data.measuredon == 'Dest')].duplicated(subset=key, keep=False).any()
-    sender_has_dupl = data[(data.loss == 0) & (data.measuredon != 'Dest')].duplicated(subset=key, keep=False).any()
+    dest_has_dupl = data[(data.loss == 0) & (data.measuredon == str(receiver))].duplicated(subset=key, keep=False).any()
+    sender_has_dupl = data[(data.loss == 0) & (data.measuredon != str(receiver))].duplicated(subset=key, keep=False).any()
     if dest_has_dupl or sender_has_dupl:
         print("Problem: Duplicates of ", key, " in dest/sender: " +  str(dest_has_dupl) + "/" + str(sender_has_dupl))
-        num_dest_dupl = np.count_nonzero(data[(data.loss == 0) & (data.measuredon == 'Dest')].duplicated(subset=key, keep=False))
-        num_src_dupl = np.count_nonzero(data[(data.loss == 0) & (data.measuredon != 'Dest')].duplicated(subset=key, keep=False))
+        num_dest_dupl = np.count_nonzero(data[(data.loss == 0) & (data.measuredon == str(receiver))].duplicated(subset=key, keep=False))
+        num_src_dupl = np.count_nonzero(data[(data.loss == 0) & (data.measuredon != str(receiver))].duplicated(subset=key, keep=False))
         if num_dest_dupl == num_src_dupl:
             print("But numbers are identical, so it's prob. ok.")
         else:
             print("Nonzeros in dest: ", num_dest_dupl)
             print("Nonzeros in sender: ", num_src_dupl)
-            print(data[(data.loss == 0) & (data.measuredon == 'Dest')].duplicated(subset=key, keep=False))
-            print(data[(data.loss == 0) & (data.measuredon != 'Dest')].duplicated(subset=key, keep=False))
+            print(data[(data.loss == 0) & (data.measuredon == str(receiver))].duplicated(subset=key, keep=False))
+            print(data[(data.loss == 0) & (data.measuredon != str(receiver))].duplicated(subset=key, keep=False))
             raise Exception
 
     # Now all remaining duplicates that are loss == 0 are the sent-received pair, therefore acked.
@@ -130,8 +130,8 @@ def loss_calc(received, sent, key):
     data.loc[((data.loss == 0) & ~(data[(data.loss == 0)].duplicated(subset=key, keep=False))), 'loss'] = 1
 
     # Safety check: All non-lost packets are acked, therefore shapex should be the same
-    receiver_shape = data[(data.loss == 0) & (data.measuredon == 'Dest')].shape
-    sender_shape = data[(data.loss == 0) & (data.measuredon != 'Dest')].shape
+    receiver_shape = data[(data.loss == 0) & (data.measuredon == str(receiver))].shape
+    sender_shape = data[(data.loss == 0) & (data.measuredon != str(receiver))].shape
 
     if more_output:
         print("Shapes: ", receiver_shape, " and ", sender_shape)
@@ -140,28 +140,28 @@ def loss_calc(received, sent, key):
         with pd.option_context('display.max_rows', None):  # more options can be specified also
             #print(data)
             raise Exception
-    eq = data[(data.loss == 0) & (data.measuredon == 'Dest')][key].values == data[(data.loss == 0) & (data.measuredon != 'Dest')][key].values
+    eq = data[(data.loss == 0) & (data.measuredon == str(receiver))][key].values == data[(data.loss == 0) & (data.measuredon != str(receiver))][key].values
     if not eq.all():
         print("Equal length but not equal! ", eq)
         raise Exception
 
     # Logic
-    data.loc[(data.loss == 0) & (data.measuredon != 'Dest'), 'num'] = 1
-    data.loc[(data.loss == 0) & (data.measuredon != 'Dest'), 'latency_sum'] = \
-        data.loc[(data.loss == 0) & (data.measuredon == 'Dest'), 'timestamp'].values - \
-        data.loc[(data.loss == 0) & (data.measuredon != 'Dest'), 'timestamp'].values
-    data.loc[(data.loss == 0) & (data.measuredon != 'Dest'), 'jitter_sum'] = \
-        np.abs(data.loc[(data.loss == 0) & (data.measuredon != 'Dest'), 'latency_sum'].values - \
-        data.loc[(data.loss == 0) & (data.measuredon != 'Dest'), 'latency_sum'].shift(1).values)
-    data.loc[(data.loss == 0) & (data.measuredon != 'Dest'), 'jitter_sum_sq'] = \
-            np.square(data.loc[(data.loss == 0) & (data.measuredon != 'Dest'), 'jitter_sum'].values)
+    data.loc[(data.loss == 0) & (data.measuredon != str(receiver)), 'num'] = 1
+    data.loc[(data.loss == 0) & (data.measuredon != str(receiver)), 'latency_sum'] = \
+        data.loc[(data.loss == 0) & (data.measuredon == str(receiver)), 'timestamp'].values - \
+        data.loc[(data.loss == 0) & (data.measuredon != str(receiver)), 'timestamp'].values
+    data.loc[(data.loss == 0) & (data.measuredon != str(receiver)), 'jitter_sum'] = \
+        np.abs(data.loc[(data.loss == 0) & (data.measuredon != str(receiver)), 'latency_sum'].values - \
+        data.loc[(data.loss == 0) & (data.measuredon != str(receiver)), 'latency_sum'].shift(1).values)
+    data.loc[(data.loss == 0) & (data.measuredon != str(receiver)), 'jitter_sum_sq'] = \
+            np.square(data.loc[(data.loss == 0) & (data.measuredon != str(receiver)), 'jitter_sum'].values)
 
-    #print(data.loc[(data.loss == 0) & (data.measuredon != 'Dest'), 'jitter_sum'])
+    #print(data.loc[(data.loss == 0) & (data.measuredon != str(receiver)), 'jitter_sum'])
 
     if key == 'seqno':
-        data.loc[(data.measuredon == 'Dest') & (data[(data.measuredon == 'Dest')].duplicated(subset=key, keep='last')), 'loss'] = 0 # Only for avoidng
+        data.loc[(data.measuredon == str(receiver)) & (data[(data.measuredon == str(receiver))].duplicated(subset=key, keep='last')), 'loss'] = 0 # Only for avoidng
 
-    return data[(data.measuredon == 'Dest')], data[(data.measuredon != 'Dest')]
+    return data[(data.measuredon == str(receiver))], data[(data.measuredon != str(receiver))]
 
 # Columns: timestamp, measuredon, src, dest, load, payload, udpno, seqno, ackno
 def processTCPDdata(filename, econfig, timestep=0.1):
@@ -171,7 +171,8 @@ def processTCPDdata(filename, econfig, timestep=0.1):
                                       'udpno': np.int64, 'seqno': np.int64, 'ackno': np.int64, 'id': np.int64,
                                       })
     num_senders = econfig['inferred']['num_senders']
-    receiver_no = num_senders + 1 # Todo: it's weird that sometimes 'Dest' is used and sometimes IP '11'. standardize!
+    # not applicable in n-dumbell
+    #receiver_no = num_senders + 1 # Todo: it's weird that sometimes str(receiver) is used and sometimes IP '11'. standardize!
 
     inflight_calc(df, econfig)
 
@@ -184,9 +185,10 @@ def processTCPDdata(filename, econfig, timestep=0.1):
 
     resampled = []
     for s in range(num_senders):
-
         sender = s + 1
-        received_from_sender = df[(df.src == sender) & (df.dest == receiver_no) & (df.measuredon == 'Dest')]
+        receiver_no = sender + num_senders
+        
+        received_from_sender = df[(df.src == sender) & (df.dest == receiver_no) & (df.measuredon == str(receiver_no))]
         received_from_sender.loc[:, 'loss'] = 0  # Does not contribute to lossstat, but is used in loss_calc
 
         sent_by_sender = df[(df.measuredon == str(sender)) & (df.src == sender) & (df.dest == receiver_no)].copy()
@@ -202,9 +204,9 @@ def processTCPDdata(filename, econfig, timestep=0.1):
             print("Shape:", received_from_sender.shape, " ", sent_by_sender.shape)
         try:
             received_from_sender[(received_from_sender.seqno != -1)], sent_by_sender[(sent_by_sender.seqno != -1)] = \
-                loss_calc(received_from_sender[(received_from_sender.seqno != -1)], sent_by_sender[(sent_by_sender.seqno != -1)], 'seqno')
+                loss_calc(received_from_sender[(received_from_sender.seqno != -1)], sent_by_sender[(sent_by_sender.seqno != -1)], 'seqno', receiver_no)
             _, sent_by_sender[(sent_by_sender.udpno != -1)] = \
-                loss_calc(received_from_sender[(received_from_sender.udpno != -1)], sent_by_sender[(sent_by_sender.udpno != -1)], 'udpno')
+                loss_calc(received_from_sender[(received_from_sender.udpno != -1)], sent_by_sender[(sent_by_sender.udpno != -1)], 'udpno', receiver_no)
 
         except:
             print("Error calculating loss and latency.")
@@ -256,14 +258,16 @@ def processTCPDdata(filename, econfig, timestep=0.1):
 # Store in csv file.
 # Fields: timestamp, measured-on, from, to, load, payload, udp, seqno, ackno
 
-def parseTCPDumpMininet(datafiles, filedestination):
+def parseTCPDumpMininet(datafiles, filedestination, econfig):
     # timestamp, measuredon, src, dest, load, payload, udpno, seqno, ackno
     more_output = False
+    num_senders = econfig['inferred']['num_senders']
     data = []
     data.append(['timestamp', 'measuredon', 'src', 'dest', 'load', 'payload', 'udpno', 'seqno', 'ackno', 'id'])
     for dfname in datafiles:
-
         measured_on = re.match(r'h(.+)-.*', dfname).group(1)
+        
+        # Will make the first destination host as the Dest, where all the logs are parsed
         datafile = RESULT_FILE_PREFIX+datafolder+dfname
         if more_output:
             print("Parsing datafile "+datafile+"...")
@@ -424,7 +428,7 @@ def calculateLoad(econfig):
     parsed_data = RESULT_FILE_PREFIX + condenseddatafolder + 'tcpdump.csv'
     if not os.path.exists(parsed_data):
         datafiles = [f for f in os.listdir(RESULT_FILE_PREFIX + datafolder)]
-        parseTCPDumpMininet(datafiles, parsed_data)
+        parseTCPDumpMininet(datafiles, parsed_data, econfig)
 
     condensed_data_file = RESULT_FILE_PREFIX + condenseddatafolder + 'tcpd_dataframe.csv'
 
@@ -487,9 +491,18 @@ def main(savePlot=False):
                    2 * econfig['plot_iperf_losslat']])
 
     plt.figure('overview', figsize=(2, 2 * num_axes))
+    # Define the number of subplots
+    num_axes = sum([econfig.get(key, False) for key in [
+        'plot_throughput', 'plot_cwnd', 'plot_queue',
+        'plot_latency', 'plot_jitter', 'plot_loss', 'plot_memory']])
 
-    fig, axes = plt.subplots(nrows=num_axes, num='overview', ncols=1, sharex=True, figsize=(100,4))
+    # Create a figure and a list of axes
+    fig, axes = plt.subplots(nrows=num_axes, figsize=(10, 4 * num_axes), sharex=True)
 
+    # Ensure axes is iterable even if there's only one subplot
+    if num_axes == 1:
+        axes = [axes]
+        
     xticks = []
     stats = {}
     ax_indx = 0
@@ -505,7 +518,7 @@ def main(savePlot=False):
         bdp = econfig['inferred']['bw_delay_product']
         real_buffer_size = bdp + int(econfig['switch_buffer'] * bdp)
         stats.update(plotQueue(figurename, axes[ax_indx], queueTs, queueVal, startAbsTs, endAbsTs, econfig['inferred']['bw_delay_product'],
-                               real_buffer_size , xticks, econfig))
+                            real_buffer_size , xticks, econfig))
         ax_indx += 1
     if econfig['plot_latency']:
         stats.update(plotLatency(figurename, axes[ax_indx], tcpd_data, startTimestamp, endTimestamp, econfig))
@@ -524,6 +537,25 @@ def main(savePlot=False):
     os.system("sudo chmod -R 777 " +  RESULT_FILE_PREFIX)
     print("Parsing and plotting finished.")
     plt.savefig('plot.png')
+    
+    # Save each subplot separately
+    result_dir = econfig['result_dir']
+    plot_names = ['throughput', 'cwnd', 'queue', 'latency', 'jitter', 'loss', 'memory']
+    ax_indx = 0
+
+    for i, name in enumerate(plot_names):
+        if econfig.get(f'plot_{name}', False):
+            single_fig, single_ax = plt.subplots(figsize=(10, 4))
+            for line in axes[ax_indx].lines:
+                single_ax.plot(line.get_xdata(), line.get_ydata(), label=line.get_label(), linestyle=line.get_linestyle(), color=line.get_color())
+            single_ax.set_title(axes[ax_indx].get_title())
+            single_ax.set_xlabel(axes[ax_indx].get_xlabel())
+            single_ax.set_ylabel(axes[ax_indx].get_ylabel())
+            single_ax.legend(loc=1)
+            single_fig.savefig(os.path.join(result_dir, f'{name}.png'))
+            plt.close(single_fig)
+            ax_indx += 1
+
     plt.close('all')
 
 
