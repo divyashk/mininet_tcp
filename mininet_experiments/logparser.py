@@ -466,8 +466,12 @@ def loadFromCSV(filename):
     return df
 
 
-def main(savePlot=False):
-
+def main(savePlot=False, resultfile = None):
+    
+    if resultfile:
+        global RESULT_FILE_PREFIX
+        RESULT_FILE_PREFIX = resultfile
+        
     econfig = loadExperimentConfig(RESULT_FILE_PREFIX)
     econfig['more_output'] = False
     if not econfig['more_output']:

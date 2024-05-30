@@ -7,6 +7,7 @@ import os
 import subprocess
 
 from mininet_experiments.ccexperiment import main as ccmain
+from mininet_experiments.logparser import main as plotFromResults
 
 
 def run_cc(config, exp_dir, workpath=""):
@@ -109,6 +110,10 @@ def main(config_name):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        main(sys.argv[1])
+        if sys.argv[1] == '--plotonly':
+            result_dir = sys.argv[2]
+            plotFromResults(resultfile=result_dir)
+        else:
+            main(sys.argv[1])
     else:
         print("Please provide a multi-experiment config file.")
