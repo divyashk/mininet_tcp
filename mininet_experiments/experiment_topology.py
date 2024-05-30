@@ -63,7 +63,7 @@ class BottleneckTopology( Topo ):
         # Could also add: jitter or loss
         # Therefore: follow netem config: packet size is expressed as number of packets
         # Add link between switches s1 and s2
-        link_size = bw_delay_product * RED_CORRECTION_FACTOR[bufferFactor] if use_red else bw_delay_product
+        #link_size = bw_delay_product * RED_CORRECTION_FACTOR[bufferFactor] if use_red else bw_delay_product
         self.addLink(s1, s2, bw=linkCapacity, delay=str(linkLatency) + "ms",
                      max_queue_size=int(bufferFactor * bw_delay_product) + bw_delay_product,
-                     link_size=link_size, enable_red=use_red)
+                     enable_red=use_red)

@@ -179,7 +179,6 @@ def plotCwnd(figurename, ax, cwndData, ssthreshData, startTimestamp, endTimestam
         plot, ax = plt.subplots()
     if len(PLOT_CWND_KEYS) == 0:
         return
-
     plotCwndData = {}
     print("start: ", startTimestamp)
 
@@ -216,9 +215,9 @@ def plotCwnd(figurename, ax, cwndData, ssthreshData, startTimestamp, endTimestam
     #ax.set_xticks(xticks)
     ax.set_ylim(bottom=0.0)
     ax.legend()
-    if destination is not None:
-        plt.savefig(destination, dpi=300)
-        plt.close(figurename)
+    # avg_cwnd = sum(plotCwndData[origin].values) / len(plotCwndData[origin].values())
+    # print(avg_cwnd)
+    # return {'avg_cwnd': float(avg_cwnd)}
 
 # Plot Queue data
 # Collect and print
@@ -268,7 +267,9 @@ def plotLoss(figurename, ax, tcpd_data, starttime, endtime, econfig, destination
     sendBehav = econfig['inferred']['behavior_summary']
     sendBehav = sendBehav.replace('_', ' ')
     total_loss = 0
-    for hostid in range(1, num_senders+1):
+    # Modify this to change plotted hosts
+    plot_host_ids = [1]
+    for hostid in plot_host_ids:
         label = "loss_" + str(hostid)
         if label in tcpd_data.columns:
             total_loss += np.sum([v for v in tcpd_data[label].values if not np.isnan(v)])
@@ -298,7 +299,10 @@ def plotLatency(figurename, ax, tcpd_data, starttime, endtime, econfig, destinat
     packet_sum = 0
     num_senders = econfig['inferred']['num_senders']
     print(tcpd_data.isnull().values.any())
-    for hostid in range(1, num_senders+1):
+    
+    plot_host_ids = [1]
+     
+    for hostid in plot_host_ids:
         latency_label = "latency_sum_" + str(hostid)
         num_label = "num_" + str(hostid)
         if latency_label in tcpd_data.columns and num_label in tcpd_data.columns:

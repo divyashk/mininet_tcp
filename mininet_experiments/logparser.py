@@ -494,7 +494,7 @@ def main(savePlot=False):
     # Define the number of subplots
     num_axes = sum([econfig.get(key, False) for key in [
         'plot_throughput', 'plot_cwnd', 'plot_queue',
-        'plot_latency', 'plot_jitter', 'plot_loss', 'plot_memory']])
+        'plot_latency', 'plot_jitter', 'plot_loss', 'plot_memory', 'plot_cwnd']])
 
     # Create a figure and a list of axes
     fig, axes = plt.subplots(nrows=num_axes, figsize=(10, 4 * num_axes), sharex=True)
@@ -511,7 +511,7 @@ def main(savePlot=False):
         stats.update(plotLoad(figurename, axes[ax_indx], tcpd_data, startTimestamp, endTimestamp, econfig))
         ax_indx += 1
     if econfig['plot_cwnd']:
-        stats.update(plotCwnd(figurename, axes[ax_indx], cwndData, ssthreshData, startAbsTs, endAbsTs, xticks))
+        plotCwnd(figurename, axes[ax_indx], cwndData, ssthreshData, startAbsTs, endAbsTs, xticks)
         ax_indx += 1
 
     if econfig['plot_queue']:
@@ -545,7 +545,7 @@ def main(savePlot=False):
 
     for i, name in enumerate(plot_names):
         if econfig.get(f'plot_{name}', False):
-            single_fig, single_ax = plt.subplots(figsize=(10, 4))
+            single_fig, single_ax = plt.subplots(figsize=(100, 4))
             for line in axes[ax_indx].lines:
                 single_ax.plot(line.get_xdata(), line.get_ydata(), label=line.get_label(), linestyle=line.get_linestyle(), color=line.get_color())
             single_ax.set_title(axes[ax_indx].get_title())
