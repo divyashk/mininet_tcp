@@ -221,7 +221,7 @@ def plotCwnd(figurename, ax, cwndData, ssthreshData, startTimestamp, endTimestam
 
 # Plot Queue data
 # Collect and print
-def plotQueue(figurename, ax, ts, values, startTimestamp, endTimestamp, bwd_product, real_buffer_size, xticks, econfig, destination="graph_1.png"):
+def plotQueue(figurename, ax, ts, values, startTimestamp, endTimestamp, bwd_product, real_buffer_size, xticks, econfig, destination = None):
     plt.figure(figurename)
     if destination is not None:
         plot, ax = plt.subplots()
@@ -245,7 +245,6 @@ def plotQueue(figurename, ax, ts, values, startTimestamp, endTimestamp, bwd_prod
     ax.set_ylabel(r'Queue Length (packets)')
     ax.set_ylim(bottom=0.0)
     ax.legend()
-    plot.savefig("queue.png")  
     if destination is not None:
         plt.savefig(destination, dpi=300)
         plt.close(figurename)
